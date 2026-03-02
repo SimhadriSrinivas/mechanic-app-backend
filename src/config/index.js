@@ -2,35 +2,47 @@
 
 require("dotenv").config();
 
+/* ================= HELPER ================= */
+function required(name) {
+  if (!process.env[name]) {
+    console.warn(`Missing environment variable: ${name}`);
+  }
+  return process.env[name];
+}
+
 module.exports = {
   /* ================= SERVER ================= */
   port: process.env.PORT || 3000,
 
   /* ================= TWILIO ================= */
   twilio: {
-    accountSid: process.env.TWILIO_ACCOUNT_SID,
-    authToken: process.env.TWILIO_AUTH_TOKEN,
-    from: process.env.TWILIO_FROM,
+    accountSid: required("TWILIO_ACCOUNT_SID"),
+    authToken: required("TWILIO_AUTH_TOKEN"),
+    from: required("TWILIO_FROM"),
   },
 
   /* ================= APPWRITE ================= */
   appwrite: {
-    endpoint: process.env.APPWRITE_ENDPOINT,
-    projectId: process.env.APPWRITE_PROJECT_ID,
-    apiKey: process.env.APPWRITE_API_KEY,
+    endpoint: required("APPWRITE_ENDPOINT"),
+    projectId: required("APPWRITE_PROJECT_ID"),
+    apiKey: required("APPWRITE_API_KEY"),
 
     // SINGLE DATABASE
-    databaseId: process.env.APPWRITE_DATABASE_ID,
+    databaseId: required("APPWRITE_DATABASE_ID"),
 
     // COLLECTIONS
-    otpCollectionId: process.env.APPWRITE_OTP_COLLECTION_ID,
-    mechanicCollectionId: process.env.APPWRITE_MECHANIC_COLLECTION_ID,
-    serviceRequestCollectionId:
-      process.env.APPWRITE_SERVICE_REQUEST_COLLECTION_ID,
+    otpCollectionId: required("APPWRITE_OTP_COLLECTION_ID"),
+    mechanicCollectionId: required("APPWRITE_MECHANIC_COLLECTION_ID"),
+    serviceRequestCollectionId: required(
+      "APPWRITE_SERVICE_REQUEST_COLLECTION_ID"
+    ),
   },
 
   /* ================= OTP ================= */
-  otpExpiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || "5", 10),
+  otpExpiryMinutes: parseInt(
+    process.env.OTP_EXPIRY_MINUTES || "5",
+    10
+  ),
 
   /* ================= RATE LIMITER ================= */
   rateLimiter: {
