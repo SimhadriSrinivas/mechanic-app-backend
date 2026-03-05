@@ -4,12 +4,17 @@ const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
 
+/* ================= SELF PING DEPENDENCIES ================= */
+const fetch = require("node-fetch");
+const cron = require("node-cron");
+
 const authRoutes = require("./routes/auth.routes");
 const mechanicRoutes = require("./routes/mechanic.routes");
 const serviceRoutes = require("./routes/service.routes");
 
 const app = express();
 app.disable("etag");
+
 /* =====================================================
    SECURITY MIDDLEWARE
 ===================================================== */
@@ -38,13 +43,23 @@ app.options("*", cors());
 app.use(express.json({ limit: "10mb" }));
 
 /* =====================================================
-   HEALTH CHECK
+   HEALTH CHECK (FOR RENDER / UPTIME MONITOR)
 ===================================================== */
 
 app.get("/", (req, res) => {
   res.status(200).json({
     status: "OK",
     message: "MEC backend server is running",
+    time: new Date(),
+  });
+});
+
+/* Dedicated health endpoint */
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    uptime: process.uptime(),
+    timestamp: Date.now(),
   });
 });
 
@@ -55,6 +70,27 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/mechanic", mechanicRoutes);
 app.use("/api/service", serviceRoutes);
+
+/* =====================================================
+   SELF PING (KEEPS RENDER FROM SLEEPING)
+===================================================== */
+
+const SERVER_URL =
+  process.env.SERVER_URL || "https://mechanic-app-backend-t33m.onrender.com";
+
+/*
+Ping every 10 minutes
+This helps keep the instance active
+*/
+
+cron.schedule("*/10 * * * *", async () => {
+  try {
+    await fetch(`${SERVER_URL}/health`);
+    console.log("Self ping successful:", new Date().toISOString());
+  } catch (err) {
+    console.log("Self ping failed:", err.message);
+  }
+});
 
 /* =====================================================
    404 HANDLER
