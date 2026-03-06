@@ -164,11 +164,11 @@ async function updateMechanicLocation(req, res) {
 }
 
 /* =====================================
-   GET ACTIVE REQUESTS (FIXED FILTER)
+   GET ACTIVE REQUESTS (FIXED)
 ===================================== */
 async function getActiveServiceRequests(req, res) {
   try {
-    const { mechanicPhone, vehicleTypes } = req.query;
+    const { mechanicPhone } = req.query;
 
     if (!mechanicPhone) {
       return res.status(400).json({
@@ -180,22 +180,14 @@ async function getActiveServiceRequests(req, res) {
     const result = await getAllServiceRequests();
     const docs = result?.documents || [];
 
-    let mechanicVehicles = [];
-
-    if (vehicleTypes) {
-      mechanicVehicles = vehicleTypes.split(",");
-    }
-
     const filtered = docs.filter((r) => {
-      // Pending requests only for matching vehicle type
-      if (
-        r.status === "pending" &&
-        mechanicVehicles.includes(r.vehicle_type)
-      ) {
+
+      // show all pending requests
+      if (r.status === "pending") {
         return true;
       }
 
-      // Accepted request only for this mechanic
+      // show accepted request only for this mechanic
       if (
         r.status === "accepted" &&
         r.mechanic_phone === mechanicPhone
@@ -210,15 +202,16 @@ async function getActiveServiceRequests(req, res) {
       success: true,
       requests: filtered,
     });
+
   } catch (err) {
     console.error("getActiveServiceRequests error:", err);
+
     return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
   }
 }
-
 /* =====================================
    HISTORY
 ===================================== */
