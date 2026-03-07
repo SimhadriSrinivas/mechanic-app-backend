@@ -10,17 +10,32 @@ const {
 } = require("../services/appwrite.service");
 
 /* =====================================
+   PHONE NORMALIZER
+===================================== */
+
+function normalizePhone(phone) {
+  if (!phone) return "";
+
+  let cleaned = phone.toString().trim();
+
+  // remove spaces
+  cleaned = cleaned.replace(/\s+/g, "");
+
+  // remove leading +
+  if (cleaned.startsWith("+")) {
+    cleaned = cleaned.substring(1);
+  }
+
+  return cleaned;
+}
+
+/* =====================================
    CREATE REQUEST
 ===================================== */
+
 async function createRequest(req, res) {
   try {
-    const {
-      user_phone,
-      user_lat,
-      user_lng,
-      service,
-      vehicle_type,
-    } = req.body;
+    const { user_phone, user_lat, user_lng, service, vehicle_type } = req.body;
 
     if (
       !user_phone ||
@@ -63,12 +78,12 @@ async function createRequest(req, res) {
 }
 
 /* =====================================
-   ACCEPT REQUEST (SAFE LOCK VERSION)
+   ACCEPT REQUEST
 ===================================== */
+
 async function acceptRequest(req, res) {
   try {
-    const { requestId, mechanic_phone, mechanic_lat, mechanic_lng } =
-      req.body;
+    const { requestId, mechanic_phone, mechanic_lat, mechanic_lng } = req.body;
 
     if (!requestId || !mechanic_phone) {
       return res.status(400).json({
@@ -77,15 +92,16 @@ async function acceptRequest(req, res) {
       });
     }
 
+    const mechanicPhoneNormalized = normalizePhone(mechanic_phone);
+
     const allRequests = await getAllServiceRequests();
     const docs = allRequests?.documents || [];
 
-    // 🔥 Check if mechanic already has active job
-    const alreadyActive = docs.find(
-      (r) =>
-        r.status === "accepted" &&
-        r.mechanic_phone === mechanic_phone
-    );
+    // Check if mechanic already has active job
+    const alreadyActive = docs.find((r) => {
+      const reqPhone = normalizePhone(r.mechanic_phone);
+      return r.status === "accepted" && reqPhone === mechanicPhoneNormalized;
+    });
 
     if (alreadyActive) {
       return res.status(409).json({
@@ -132,8 +148,9 @@ async function acceptRequest(req, res) {
 }
 
 /* =====================================
-   UPDATE LOCATION
+   UPDATE MECHANIC LOCATION
 ===================================== */
+
 async function updateMechanicLocation(req, res) {
   try {
     const { requestId, mechanic_lat, mechanic_lng } = req.body;
@@ -164,8 +181,9 @@ async function updateMechanicLocation(req, res) {
 }
 
 /* =====================================
-   GET ACTIVE REQUESTS (FIXED)
+   GET ACTIVE REQUESTS
 ===================================== */
+
 async function getActiveServiceRequests(req, res) {
   try {
     let { mechanicPhone } = req.query;
@@ -177,24 +195,21 @@ async function getActiveServiceRequests(req, res) {
       });
     }
 
-    // normalize phone
-    mechanicPhone = mechanicPhone.replace(/\s/g, "");
+    const mechanicPhoneNormalized = normalizePhone(mechanicPhone);
 
     const result = await getAllServiceRequests();
     const docs = result?.documents || [];
 
     const filtered = docs.filter((r) => {
-
       // show all pending requests
       if (r.status === "pending") {
         return true;
       }
 
-      // normalize mechanic phone in request
-      const reqPhone = (r.mechanic_phone || "").replace(/\s/g, "");
+      const reqPhone = normalizePhone(r.mechanic_phone);
 
-      // show accepted request for this mechanic
-      if (r.status === "accepted" && reqPhone === mechanicPhone) {
+      // show accepted request only for this mechanic
+      if (r.status === "accepted" && reqPhone === mechanicPhoneNormalized) {
         return true;
       }
 
@@ -205,7 +220,6 @@ async function getActiveServiceRequests(req, res) {
       success: true,
       requests: filtered,
     });
-
   } catch (err) {
     console.error("getActiveServiceRequests error:", err);
 
@@ -215,9 +229,11 @@ async function getActiveServiceRequests(req, res) {
     });
   }
 }
+
 /* =====================================
    HISTORY
 ===================================== */
+
 async function userHistory(req, res) {
   const { phone } = req.query;
   const history = await getUserHistory(phone);
