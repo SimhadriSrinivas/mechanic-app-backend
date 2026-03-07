@@ -168,7 +168,7 @@ async function updateMechanicLocation(req, res) {
 ===================================== */
 async function getActiveServiceRequests(req, res) {
   try {
-    const { mechanicPhone } = req.query;
+    let { mechanicPhone } = req.query;
 
     if (!mechanicPhone) {
       return res.status(400).json({
@@ -176,6 +176,9 @@ async function getActiveServiceRequests(req, res) {
         message: "mechanicPhone required",
       });
     }
+
+    // normalize phone
+    mechanicPhone = mechanicPhone.replace(/\s/g, "");
 
     const result = await getAllServiceRequests();
     const docs = result?.documents || [];
@@ -187,11 +190,11 @@ async function getActiveServiceRequests(req, res) {
         return true;
       }
 
-      // show accepted request only for this mechanic
-      if (
-        r.status === "accepted" &&
-        r.mechanic_phone === mechanicPhone
-      ) {
+      // normalize mechanic phone in request
+      const reqPhone = (r.mechanic_phone || "").replace(/\s/g, "");
+
+      // show accepted request for this mechanic
+      if (r.status === "accepted" && reqPhone === mechanicPhone) {
         return true;
       }
 
