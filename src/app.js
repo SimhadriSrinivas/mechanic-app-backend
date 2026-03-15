@@ -5,7 +5,6 @@ const helmet = require("helmet");
 const cors = require("cors");
 
 /* ================= SELF PING DEPENDENCIES ================= */
-const fetch = require("node-fetch");
 const cron = require("node-cron");
 
 const authRoutes = require("./routes/auth.routes");
@@ -22,12 +21,12 @@ app.disable("etag");
 app.use(helmet());
 
 /* =====================================================
-   CORS CONFIG (FIXED FOR WEB + NGROK)
+   CORS CONFIG
 ===================================================== */
 
 app.use(
   cors({
-    origin: "*", // Allow all for development
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
@@ -37,13 +36,16 @@ app.use(
   })
 );
 
-/* Handle preflight explicitly */
 app.options("*", cors());
+
+/* =====================================================
+   BODY PARSER
+===================================================== */
 
 app.use(express.json({ limit: "10mb" }));
 
 /* =====================================================
-   HEALTH CHECK (FOR RENDER / UPTIME MONITOR)
+   HEALTH CHECK (FOR MONITORING)
 ===================================================== */
 
 app.get("/", (req, res) => {
@@ -54,7 +56,6 @@ app.get("/", (req, res) => {
   });
 });
 
-/* Dedicated health endpoint */
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "healthy",
@@ -72,15 +73,16 @@ app.use("/api/mechanic", mechanicRoutes);
 app.use("/api/service", serviceRoutes);
 
 /* =====================================================
-   SELF PING (KEEPS RENDER FROM SLEEPING)
+   SELF PING (OPTIONAL)
 ===================================================== */
 
 const SERVER_URL =
   process.env.SERVER_URL || "https://mechanic-app-backend-t33m.onrender.com";
 
 /*
-Ping every 10 minutes
-This helps keep the instance active
+Note:
+This will NOT prevent Render cold start.
+Use UptimeRobot for that.
 */
 
 cron.schedule("*/10 * * * *", async () => {

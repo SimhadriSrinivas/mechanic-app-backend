@@ -17,11 +17,8 @@ function normalizePhone(phone) {
   if (!phone) return "";
 
   let cleaned = phone.toString().trim();
-
-  // remove spaces
   cleaned = cleaned.replace(/\s+/g, "");
 
-  // remove leading +
   if (cleaned.startsWith("+")) {
     cleaned = cleaned.substring(1);
   }
@@ -35,7 +32,7 @@ function normalizePhone(phone) {
 
 async function createRequest(req, res) {
   try {
-    const { user_phone, user_lat, user_lng, service, vehicle_type } = req.body;
+    let { user_phone, user_lat, user_lng, service, vehicle_type } = req.body;
 
     if (
       !user_phone ||
@@ -49,6 +46,8 @@ async function createRequest(req, res) {
         message: "Missing required fields",
       });
     }
+
+    user_phone = normalizePhone(user_phone);
 
     const request = await createServiceRequest({
       user_phone,
@@ -70,6 +69,7 @@ async function createRequest(req, res) {
     });
   } catch (err) {
     console.error("createRequest error:", err);
+
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -83,7 +83,7 @@ async function createRequest(req, res) {
 
 async function acceptRequest(req, res) {
   try {
-    const { requestId, mechanic_phone, mechanic_lat, mechanic_lng } = req.body;
+    let { requestId, mechanic_phone, mechanic_lat, mechanic_lng } = req.body;
 
     if (!requestId || !mechanic_phone) {
       return res.status(400).json({
@@ -92,23 +92,7 @@ async function acceptRequest(req, res) {
       });
     }
 
-    const mechanicPhoneNormalized = normalizePhone(mechanic_phone);
-
-    const allRequests = await getAllServiceRequests();
-    const docs = allRequests?.documents || [];
-
-    // Check if mechanic already has active job
-    const alreadyActive = docs.find((r) => {
-      const reqPhone = normalizePhone(r.mechanic_phone);
-      return r.status === "accepted" && reqPhone === mechanicPhoneNormalized;
-    });
-
-    if (alreadyActive) {
-      return res.status(409).json({
-        success: false,
-        message: "Mechanic already has an active job",
-      });
-    }
+    mechanic_phone = normalizePhone(mechanic_phone);
 
     const existing = await getServiceRequestById(requestId);
 
@@ -126,6 +110,23 @@ async function acceptRequest(req, res) {
       });
     }
 
+    /* Check if mechanic already has active job */
+
+    const allRequests = await getAllServiceRequests();
+    const docs = allRequests?.documents || [];
+
+    const alreadyActive = docs.find((r) => {
+      const reqPhone = normalizePhone(r.mechanic_phone);
+      return r.status === "accepted" && reqPhone === mechanic_phone;
+    });
+
+    if (alreadyActive) {
+      return res.status(409).json({
+        success: false,
+        message: "Mechanic already has an active job",
+      });
+    }
+
     const updated = await updateServiceRequest(requestId, {
       status: "accepted",
       mechanic_phone,
@@ -140,6 +141,7 @@ async function acceptRequest(req, res) {
     });
   } catch (err) {
     console.error("acceptRequest error:", err);
+
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -173,6 +175,7 @@ async function updateMechanicLocation(req, res) {
     });
   } catch (err) {
     console.error("updateMechanicLocation error:", err);
+
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -195,21 +198,17 @@ async function getActiveServiceRequests(req, res) {
       });
     }
 
-    const mechanicPhoneNormalized = normalizePhone(mechanicPhone);
+    mechanicPhone = normalizePhone(mechanicPhone);
 
     const result = await getAllServiceRequests();
     const docs = result?.documents || [];
 
     const filtered = docs.filter((r) => {
-      // show all pending requests
-      if (r.status === "pending") {
-        return true;
-      }
+      if (r.status === "pending") return true;
 
       const reqPhone = normalizePhone(r.mechanic_phone);
 
-      // show accepted request only for this mechanic
-      if (r.status === "accepted" && reqPhone === mechanicPhoneNormalized) {
+      if (r.status === "accepted" && reqPhone === mechanicPhone) {
         return true;
       }
 
@@ -235,23 +234,43 @@ async function getActiveServiceRequests(req, res) {
 ===================================== */
 
 async function userHistory(req, res) {
-  const { phone } = req.query;
-  const history = await getUserHistory(phone);
+  try {
+    const { phone } = req.query;
 
-  return res.json({
-    success: true,
-    data: history?.documents || [],
-  });
+    const history = await getUserHistory(phone);
+
+    return res.json({
+      success: true,
+      data: history?.documents || [],
+    });
+  } catch (err) {
+    console.error("userHistory error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 }
 
 async function mechanicHistory(req, res) {
-  const { phone } = req.query;
-  const history = await getMechanicHistory(phone);
+  try {
+    const { phone } = req.query;
 
-  return res.json({
-    success: true,
-    data: history?.documents || [],
-  });
+    const history = await getMechanicHistory(phone);
+
+    return res.json({
+      success: true,
+      data: history?.documents || [],
+    });
+  } catch (err) {
+    console.error("mechanicHistory error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 }
 
 module.exports = {

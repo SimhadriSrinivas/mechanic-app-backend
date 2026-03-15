@@ -25,29 +25,32 @@ const {
    USER ROUTES
 ===================================================== */
 
-// ✅ Create new service request
+// Create a new service request
 router.post("/create", createRequest);
 
-// ❌ Removed cancelRequest (not implemented in controller)
-// ❌ Removed getServiceRequestByIdController (not implemented)
+// Get user service history
+router.get("/user-history", userHistory);
 
 /* =====================================================
    MECHANIC ROUTES
 ===================================================== */
 
-// ✅ Accept a pending request
+// Accept a pending request
 router.post("/accept", acceptRequest);
 
-// ✅ Update live mechanic GPS location
+// Update mechanic live GPS location
 router.post("/update-location", updateMechanicLocation);
 
-// ✅ Get user service history
-router.get("/user-history", userHistory);
-
-// ✅ Get mechanic history
+// Get mechanic service history
 router.get("/mechanic-history", mechanicHistory);
 
-// ✅ Get active service requests (KEEP LAST GET ROUTE)
+/* =====================================================
+   ACTIVE REQUESTS (KEEP LAST)
+===================================================== */
+
+// Get active service requests
+// Example:
+// GET /api/service?mechanicPhone=XXXXXXXXXX
 router.get("/", getActiveServiceRequests);
 
 module.exports = router;
