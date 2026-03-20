@@ -261,25 +261,49 @@ async function getUserHistory(phone) {
   }
 }
 
+// ONLY THIS FUNCTION CHANGED 👇👇👇
+
 async function getMechanicHistory(phone) {
   if (!ensureDatabase()) return { documents: [] };
 
   try {
+    if (!phone) return { documents: [] };
+
+    const clean = phone.replace(/\D/g, "");
+
+    const formats = [];
+
+    if (clean.length === 10) {
+      formats.push(clean);
+      formats.push(`91${clean}`);
+      formats.push(`+91${clean}`);
+    } else if (clean.length === 12) {
+      formats.push(clean);
+      formats.push(`+${clean}`);
+      formats.push(clean.slice(2));
+    } else {
+      formats.push(phone);
+    }
+
+    console.log("📞 Searching mechanic_phone formats:", formats);
+
     return await databases.listDocuments(
       config.appwrite.databaseId,
       config.appwrite.serviceRequestCollectionId,
       [
-        Query.equal("mechanic_phone", phone),
+        Query.or(
+          formats.map((p) => Query.equal("mechanic_phone", p))
+        ),
+        Query.equal("status", "completed"),
         Query.orderDesc("$createdAt"),
         Query.limit(100),
-      ],
+      ]
     );
   } catch (err) {
     error("getMechanicHistory:", err.message);
     return { documents: [] };
   }
 }
-
 /* ====================================================
    EXPORTS
 ==================================================== */
