@@ -60,7 +60,6 @@ async function createRequest(req, res) {
       mechanic_lat: null,
       mechanic_lng: null,
       acceptedAt: null,
-      cancelled_by: null,
     });
 
     return res.status(201).json({
@@ -109,8 +108,6 @@ async function acceptRequest(req, res) {
         message: "Request already accepted",
       });
     }
-
-    /* Check if mechanic already has active job */
 
     const allRequests = await getAllServiceRequests();
     const docs = allRequests?.documents || [];
@@ -175,6 +172,58 @@ async function updateMechanicLocation(req, res) {
     });
   } catch (err) {
     console.error("updateMechanicLocation error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
+/* =====================================
+   COMPLETE SERVICE (🔥 NEW)
+===================================== */
+
+async function completeService(req, res) {
+  try {
+    const {
+      requestId,
+      amount,
+      issue_description,
+      payment_type,
+    } = req.body;
+
+    if (!requestId || amount === undefined || !payment_type) {
+      return res.status(400).json({
+        success: false,
+        message: "requestId, amount, payment_type required",
+      });
+    }
+
+    const existing = await getServiceRequestById(requestId);
+
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        message: "Request not found",
+      });
+    }
+
+    const updated = await updateServiceRequest(requestId, {
+      amount: Number(amount),
+      issue_description: issue_description || "",
+      payment_type,
+      status: "completed",
+      call_completed_at: new Date().toISOString(),
+    });
+
+    return res.json({
+      success: true,
+      message: "Service completed successfully",
+      data: updated,
+    });
+  } catch (err) {
+    console.error("completeService error:", err);
 
     return res.status(500).json({
       success: false,
@@ -280,4 +329,5 @@ module.exports = {
   getActiveServiceRequests,
   userHistory,
   mechanicHistory,
+  completeService, 
 };

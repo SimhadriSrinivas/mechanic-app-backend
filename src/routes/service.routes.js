@@ -10,6 +10,7 @@ const {
   getActiveServiceRequests,
   userHistory,
   mechanicHistory,
+  completeService, // ✅ NEW IMPORT
 } = require("../controllers/service.controller");
 
 /*
@@ -40,6 +41,9 @@ router.post("/accept", acceptRequest);
 
 // Update mechanic live GPS location
 router.post("/update-location", updateMechanicLocation);
+
+// Complete service + payment (🔥 NEW)
+router.post("/complete-service", completeService);
 
 // Get mechanic service history
 router.get("/mechanic-history", mechanicHistory);
