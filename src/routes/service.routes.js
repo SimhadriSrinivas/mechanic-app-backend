@@ -11,6 +11,7 @@ const {
   userHistory,
   mechanicHistory,
   completeService, // ✅ NEW IMPORT
+  getRequestById, // ✅ NEW IMPORT
 } = require("../controllers/service.controller");
 
 /*
@@ -31,6 +32,9 @@ router.post("/create", createRequest);
 
 // Get user service history
 router.get("/user-history", userHistory);
+
+// Get service request by ID
+router.get("/request/:requestId", getRequestById);
 
 /* =====================================================
    MECHANIC ROUTES

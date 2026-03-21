@@ -285,7 +285,7 @@ async function getMechanicHistory(phone) {
       formats.push(phone);
     }
 
-    console.log("📞 Searching mechanic_phone formats:", formats);
+    console.log(" Searching mechanic_phone formats:", formats);
 
     return await databases.listDocuments(
       config.appwrite.databaseId,

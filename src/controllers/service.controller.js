@@ -186,12 +186,7 @@ async function updateMechanicLocation(req, res) {
 
 async function completeService(req, res) {
   try {
-    const {
-      requestId,
-      amount,
-      issue_description,
-      payment_type,
-    } = req.body;
+    const { requestId, amount, issue_description, payment_type } = req.body;
 
     if (!requestId || amount === undefined || !payment_type) {
       return res.status(400).json({
@@ -322,6 +317,44 @@ async function mechanicHistory(req, res) {
   }
 }
 
+/* =====================================
+   GET SERVICE REQUEST BY ID
+===================================== */
+
+async function getRequestById(req, res) {
+  try {
+    const { requestId } = req.params;
+
+    if (!requestId) {
+      return res.status(400).json({
+        success: false,
+        message: "requestId required",
+      });
+    }
+
+    const request = await getServiceRequestById(requestId);
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: "Service request not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: request,
+    });
+  } catch (err) {
+    console.error("getRequestById error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
 module.exports = {
   createRequest,
   acceptRequest,
@@ -329,5 +362,6 @@ module.exports = {
   getActiveServiceRequests,
   userHistory,
   mechanicHistory,
-  completeService, 
+  completeService,
+  getRequestById,
 };
