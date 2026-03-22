@@ -215,6 +215,7 @@ async function cancelRequest(req, res) {
     const updated = await updateServiceRequest(requestId, {
       status: "cancelled",
       cancelledAt: new Date().toISOString(),
+      user_phone: null,
     });
 
     return res.json({
@@ -310,9 +311,14 @@ async function getActiveServiceRequests(req, res) {
       return false;
     });
 
+    const sanitized = filtered.map((r) => ({
+      ...r,
+      user_phone: null,
+    }));
+
     return res.json({
       success: true,
-      requests: filtered,
+      requests: sanitized,
     });
   } catch (err) {
     console.error("getActiveServiceRequests error:", err);
@@ -410,6 +416,7 @@ module.exports = {
   createRequest,
   acceptRequest,
   updateMechanicLocation,
+  cancelRequest,
   getActiveServiceRequests,
   userHistory,
   mechanicHistory,
