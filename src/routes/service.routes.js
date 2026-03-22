@@ -7,6 +7,7 @@ const {
   createRequest,
   acceptRequest,
   updateMechanicLocation,
+  cancelRequest,
   getActiveServiceRequests,
   userHistory,
   mechanicHistory,
@@ -45,6 +46,9 @@ router.post("/accept", acceptRequest);
 
 // Update mechanic live GPS location
 router.post("/update-location", updateMechanicLocation);
+
+// Cancel a pending request
+router.post("/cancel", cancelRequest);
 
 // Complete service + payment (🔥 NEW)
 router.post("/complete-service", completeService);

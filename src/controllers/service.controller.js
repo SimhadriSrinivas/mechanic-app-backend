@@ -181,6 +181,57 @@ async function updateMechanicLocation(req, res) {
 }
 
 /* =====================================
+   CANCEL SERVICE
+===================================== */
+
+async function cancelRequest(req, res) {
+  try {
+    const { requestId } = req.body;
+
+    if (!requestId) {
+      return res.status(400).json({
+        success: false,
+        message: "requestId required",
+      });
+    }
+
+    const existing = await getServiceRequestById(requestId);
+
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        message: "Request not found",
+      });
+    }
+
+    if (existing.status === "cancelled" || existing.status === "completed") {
+      return res.json({
+        success: true,
+        message: "Request already finalized",
+        data: existing,
+      });
+    }
+
+    const updated = await updateServiceRequest(requestId, {
+      status: "cancelled",
+      cancelledAt: new Date().toISOString(),
+    });
+
+    return res.json({
+      success: true,
+      data: updated,
+    });
+  } catch (err) {
+    console.error("cancelRequest error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
+/* =====================================
    COMPLETE SERVICE (🔥 NEW)
 ===================================== */
 
